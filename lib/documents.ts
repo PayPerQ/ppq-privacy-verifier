@@ -77,8 +77,12 @@ function parseDataUrl(url: string): { mimeType: string; bytes: Buffer } | null {
   // a malformed attachment must not reach the (billed) converter.
   const payload = match[2].replace(/\s+/g, "");
   if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(payload)) return null;
+  if (payload.includes("=") ? payload.length % 4 !== 0 : payload.length % 4 === 1) return null;
   const bytes = Buffer.from(payload, "base64");
   if (!bytes.length) return null;
+  // Round-trip to reject bad padding/length, which Buffer.from tolerates.
+  const canonical = (b64: string) => b64.replace(/-/g, "+").replace(/_/g, "/").replace(/=+$/, "");
+  if (canonical(bytes.toString("base64")) !== canonical(payload)) return null;
   return { mimeType: (match[1] || "application/octet-stream").toLowerCase(), bytes };
 }
 

@@ -123,9 +123,9 @@ ciphertext on, but it is decrypted only inside Tinfoil's enclave.
 - **Documents (PDF, DOCX, …):** send them inline, as an OpenAI `file` part
   (`file_data: "data:application/pdf;base64,…"`) or an Anthropic `document`
   block. The proxy converts each one to text inside Tinfoil's enclave, over the
-  same encrypted channel, so documents work on every `private/*` model. Each distinct document is converted once per proxy run and
-  billed a small fixed fee (about $0.06); resending the conversation doesn't
-  convert it again. Scanned pages are OCR'd during conversion; if a document
+  same encrypted channel, so documents work on every `private/*` model. Each conversion is billed a small fixed fee (about
+  $0.06). The proxy remembers the 64 most recently used documents until it
+  restarts, so resending a conversation doesn't convert them again. Scanned pages are OCR'd during conversion; if a document
   still yields no text it is passed on as a file, which only vision models
   (`kimi-k3`, `glm-5-3-flash`, `gemma4-31b`, `deepseek-v4-1-flash`) can read.
 
