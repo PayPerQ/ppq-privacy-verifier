@@ -120,6 +120,14 @@ ciphertext on, but it is decrypted only inside Tinfoil's enclave.
   Tinfoil's operators, not the cloud provider.
 - **What the proxy checks:** Tinfoil's hardware attestation, against the code
   measurement in Tinfoil's signed release.
+- **Documents (PDF, DOCX, …):** send them inline, as an OpenAI `file` part
+  (`file_data: "data:application/pdf;base64,…"`) or an Anthropic `document`
+  block. The proxy converts each one to text inside Tinfoil's enclave, over the
+  same encrypted channel, so documents work on every `private/*` model. Each conversion is billed a small fixed fee (about
+  $0.06). The proxy remembers the 64 most recently used documents until it
+  restarts, so resending a conversation doesn't convert them again. Scanned pages are OCR'd during conversion; if a document
+  still yields no text it is passed on as a file, which only vision models
+  (`kimi-k3`, `glm-5-3-flash`, `gemma4-31b`, `deepseek-v4-1-flash`) can read.
 
 ### What PPQ can still see
 
@@ -138,7 +146,7 @@ The proxy won't send anything to an enclave that hasn't passed verification.
 ## Models
 
 - **`private/*`:** `kimi-k3`, `gpt-oss-120b`, `llama3-3-70b`, `glm-5-3`,
-  `glm-5-3-flash`, `gemma4-31b`, `deepseek-v4-flash`, `deepseek-v4-1-flash`.
+  `glm-5-3-flash`, `gemma4-31b`, `deepseek-v4-1-flash`.
   `GET /v1/models` lists these. The `private/` prefix is optional, and a
   request with no model uses `private/kimi-k3`.
 - **Everything else:** any model id from [ppq.ai/models](https://ppq.ai/models),

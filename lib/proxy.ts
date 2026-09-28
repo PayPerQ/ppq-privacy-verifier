@@ -33,6 +33,11 @@ import {
   type AnthropicRequest,
 } from "./anthropic.js";
 import { renderStatusPage } from "./statusPage.js";
+import {
+  convertDocumentParts,
+  createDocumentConverter,
+  DocumentError,
+} from "./documents.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -645,6 +650,24 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
   }
 
   /**
+   * Replace document attachments with their text before a Tinfoil request —
+   * text-only private models otherwise drop them silently (see documents.ts).
+   */
+  async function inlineDocuments(
+    openaiBody: Record<string, unknown>,
+    upstreamAuth: string
+  ): Promise<void> {
+    const count = await convertDocumentParts(
+      openaiBody,
+      createDocumentConverter(encryptedFetch, apiBase, upstreamAuth),
+      upstreamAuth
+    );
+    if (count && config.debug) {
+      logger.debug?.(`Converted ${count} document attachment(s) to text`);
+    }
+  }
+
+  /**
    * Forward an OpenAI-format body to the Nitro enclave over ITS EHBP channel.
    * The model passes through verbatim (the enclave accepts PPQ's short ids).
    */
@@ -850,6 +873,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
               `→ [openai] ${routed.modelId} (tinfoil: ${routed.enclaveModelId}), stream: ${!!parsed.stream}`
             );
           }
+          await inlineDocuments(parsed, upstreamAuth);
           response = await forwardEncrypted(parsed, routed.modelId, upstreamAuth, toolId);
         } else {
           // Nitro enclave: model passes through verbatim
@@ -928,6 +952,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
               `→ [anthropic] ${routed.modelId} (tinfoil: ${routed.enclaveModelId}), stream: ${wantStream}`
             );
           }
+          await inlineDocuments(openaiBody, upstreamAuth);
           response = await forwardEncrypted(openaiBody, routed.modelId, upstreamAuth, toolId);
         } else {
           // Nitro enclave: model passes through verbatim
@@ -1133,6 +1158,29 @@ function sendUpstreamError(
   if (res.headersSent) {
     logger.error(`Error after response started: ${err?.message}`);
     res.end();
+    return;
+  }
+
+  if (err instanceof DocumentError) {
+    logger.error(`Document attachment error: ${err.message}`);
+    res.writeHead(err.status, { "Content-Type": "application/json" });
+    const type =
+      err.status >= 500
+        ? dialect === "anthropic"
+          ? "api_error"
+          : "proxy_error"
+        : err.status === 401 || err.status === 403
+          ? "authentication_error"
+          : err.status === 402
+            ? "billing_error"
+            : "invalid_request_error";
+    res.end(
+      JSON.stringify(
+        dialect === "anthropic"
+          ? { type: "error", error: { type, message: err.message } }
+          : { error: { message: err.message, type } }
+      )
+    );
     return;
   }
 
