@@ -73,10 +73,13 @@ async function convertCached(
 function parseDataUrl(url: string): { mimeType: string; bytes: Buffer } | null {
   const match = /^data:([^;,]+)?(?:;[^,]*)?;base64,(.*)$/s.exec(url);
   if (!match) return null;
-  return {
-    mimeType: (match[1] || "application/octet-stream").toLowerCase(),
-    bytes: Buffer.from(match[2], "base64"),
-  };
+  // Buffer.from silently skips invalid characters, so check the payload first:
+  // a malformed attachment must not reach the (billed) converter.
+  const payload = match[2].replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(payload)) return null;
+  const bytes = Buffer.from(payload, "base64");
+  if (!bytes.length) return null;
+  return { mimeType: (match[1] || "application/octet-stream").toLowerCase(), bytes };
 }
 
 /** The wrapper both dialects use when a document is inlined as text. */
@@ -121,7 +124,7 @@ export async function convertDocumentParts(
       const decoded = parseDataUrl(fileData);
       if (!decoded) {
         throw new DocumentError(
-          "File attachments for private models must be base64 data URLs " +
+          "File attachments for private models must be non-empty base64 data URLs " +
             "(data:<mime>;base64,…); remote URLs are not fetched."
         );
       }

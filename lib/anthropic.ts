@@ -11,7 +11,7 @@
  * on both for every agentic turn.
  */
 
-import { documentText } from "./documents.js";
+import { DocumentError, documentText } from "./documents.js";
 
 // ─── Request: Anthropic → OpenAI ─────────────────────────────────────────────
 
@@ -31,7 +31,8 @@ interface AnthropicDocumentBlock {
     | { type: "base64"; media_type: string; data: string }
     | { type: "text"; media_type?: string; data: string }
     | { type: "content"; content: string | AnthropicTextBlock[] }
-    | { type: "url"; url: string };
+    | { type: "url"; url: string }
+    | { type: "file"; file_id: string };
   title?: string;
   context?: string;
 }
@@ -112,6 +113,11 @@ function documentToPart(block: AnthropicDocumentBlock): Record<string, unknown> 
     }
     case "url":
       return { type: "file", file: { filename: name, file_data: source.url } };
+    default:
+      throw new DocumentError(
+        `Unsupported document source type "${(source as { type?: string }).type}". ` +
+          "Send documents inline as base64 or text; Files API references are not supported."
+      );
   }
 }
 

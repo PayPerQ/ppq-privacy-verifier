@@ -1164,7 +1164,12 @@ function sendUpstreamError(
   if (err instanceof DocumentError) {
     logger.error(`Document attachment error: ${err.message}`);
     res.writeHead(err.status, { "Content-Type": "application/json" });
-    const type = err.status === 402 ? "billing_error" : "invalid_request_error";
+    const type =
+      err.status === 401 || err.status === 403
+        ? "authentication_error"
+        : err.status === 402
+          ? "billing_error"
+          : "invalid_request_error";
     res.end(
       JSON.stringify(
         dialect === "anthropic"
