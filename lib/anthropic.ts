@@ -11,6 +11,8 @@
  * on both for every agentic turn.
  */
 
+import { documentText } from "./documents.js";
+
 // ─── Request: Anthropic → OpenAI ─────────────────────────────────────────────
 
 interface AnthropicTextBlock {
@@ -22,6 +24,16 @@ interface AnthropicImageBlock {
   source:
     | { type: "base64"; media_type: string; data: string }
     | { type: "url"; url: string };
+}
+interface AnthropicDocumentBlock {
+  type: "document";
+  source:
+    | { type: "base64"; media_type: string; data: string }
+    | { type: "text"; media_type?: string; data: string }
+    | { type: "content"; content: string | AnthropicTextBlock[] }
+    | { type: "url"; url: string };
+  title?: string;
+  context?: string;
 }
 interface AnthropicToolUseBlock {
   type: "tool_use";
@@ -38,6 +50,7 @@ interface AnthropicToolResultBlock {
 type AnthropicContentBlock =
   | AnthropicTextBlock
   | AnthropicImageBlock
+  | AnthropicDocumentBlock
   | AnthropicToolUseBlock
   | AnthropicToolResultBlock;
 
@@ -68,6 +81,38 @@ export interface AnthropicRequest {
 function imageToUrl(source: AnthropicImageBlock["source"]): string {
   if (source.type === "url") return source.url;
   return `data:${source.media_type};base64,${source.data}`;
+}
+
+/**
+ * Translate an Anthropic document block into an OpenAI content part: a base64
+ * file becomes a `file` part (the Tinfoil path converts it to text before
+ * forwarding), and text documents become plain text.
+ */
+function documentToPart(block: AnthropicDocumentBlock): Record<string, unknown> {
+  const { source } = block;
+  const name = block.title || "document";
+  const wrap = (text: string) => documentText(name, text);
+  switch (source.type) {
+    case "base64": {
+      const ext = source.media_type === "application/pdf" ? ".pdf" : "";
+      const filename = block.title ? block.title : `document${ext}`;
+      return {
+        type: "file",
+        file: { filename, file_data: `data:${source.media_type};base64,${source.data}` },
+      };
+    }
+    case "text":
+      return { type: "text", text: wrap(source.data) };
+    case "content": {
+      const text =
+        typeof source.content === "string"
+          ? source.content
+          : source.content.map((b) => (b.type === "text" ? b.text : "")).join("\n");
+      return { type: "text", text: wrap(text) };
+    }
+    case "url":
+      return { type: "file", file: { filename: name, file_data: source.url } };
+  }
 }
 
 /** Reduce a tool_result's content to a single string for an OpenAI tool message. */
@@ -134,7 +179,7 @@ export function anthropicToOpenAI(req: AnthropicRequest): Record<string, unknown
       continue;
     }
 
-    // User turns may contain text, images, and tool_result blocks. Each
+    // User turns may contain text, images, documents, and tool_result blocks. Each
     // tool_result becomes its own OpenAI `tool` message; remaining blocks are
     // collected into a single user message (multimodal parts when needed).
     const userParts: Array<Record<string, unknown>> = [];
@@ -147,6 +192,8 @@ export function anthropicToOpenAI(req: AnthropicRequest): Record<string, unknown
           type: "image_url",
           image_url: { url: imageToUrl(block.source) },
         });
+      } else if (block.type === "document") {
+        userParts.push(documentToPart(block));
       } else if (block.type === "tool_result") {
         // OpenAI's tool role has no error flag, so surface is_error inline.
         const text = toolResultToText(block.content);
