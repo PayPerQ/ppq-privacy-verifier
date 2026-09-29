@@ -1,20 +1,34 @@
 # PPQ Privacy Verifier
 
-PPQ.AI, the product, is private by default. This repository is an optional
-tool for verifying that the privacy is actually happening.
+PPQ.AI, as of September 29th, 2026, is by default blind to the content of
+user queries through the use of AWS Nitro enclaves. This repository is an
+optional add-on tool for cryptographically verifying that the privacy promised
+in the previous sentence is actually happening.
 
-Every request to PPQ.AI is served inside an AWS Nitro enclave: your prompt is
-encrypted before it leaves your device and is not decrypted until it reaches
-an enclave, either PPQ's, which forwards it to the model's provider, or, for
-`private/*` models, the one where the model itself runs. PPQ's own backend
-sees a credit check and billing metadata, never your content.
+Every chat request to PPQ.AI is now served inside an AWS Nitro enclave: your
+prompt is encrypted before it leaves your device and is not decrypted until it
+reaches an enclave. PPQ's own backend sees a credit check and billing
+metadata, never your content.
 
 The enclave's code is open source and reproducibly built. This proxy runs on
-your machine and checks, before each request is sent, that the enclave it is
-about to talk to is running that published code, so you do not have to take
-PPQ's word for it.
+your machine. When it starts, it checks that the enclave it is about to talk
+to is running that published code, and every request it then sends is
+encrypted to a key that only that verified enclave holds, so you do not have
+to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
+
+## Which enclave decrypts your prompt
+
+That depends on the model.
+
+For frontier models such as Claude, GPT and Gemini, it is PPQ's Nitro
+enclave. The enclave decrypts your prompt and forwards it to the model's
+provider, so the provider sees it. PPQ does not.
+
+For `private/*` models, the model itself runs inside a
+[Tinfoil](https://tinfoil.sh) enclave, and your prompt is decrypted only
+there. Nobody but you sees it: not PPQ, and not Tinfoil.
 
 ## What the enclave keeps PPQ, and AWS, from doing
 
@@ -74,10 +88,10 @@ from the enclave repository.
 
 ## What the proxy does
 
-Point any OpenAI- or Anthropic-compatible client at it. Before a request
-leaves your computer, the proxy verifies the enclave's attestation against the
-published code measurement and encrypts the request to a key only that enclave
-holds. Which enclave depends on the model.
+Point any OpenAI- or Anthropic-compatible client at it. When the proxy starts,
+it verifies the enclave's attestation against the published code measurement.
+Every request that leaves your computer is then encrypted to a key only that
+verified enclave holds. Which enclave depends on the model.
 
 ### Frontier models: Claude, GPT, Gemini, …
 
