@@ -179,5 +179,7 @@ to that user rather than to all of PPQ. For OpenAI models the enclave
 attaches a keyed hash of your credit id. OpenAI can tell that a set of
 requests came from the same customer, but cannot turn the hash back into a
 credit id, let alone a person. Other providers may add the same requirement
-in the future; if they do, PPQ will handle it the same way, and this note
-will be updated.
+in the future; if they do, PPQ will handle it the same way, and any such
+change will be reflected in this note and in PPQ's
+[Terms of Service](https://ppq.ai/terms) and
+[Privacy Policy](https://ppq.ai/privacy).
