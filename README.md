@@ -41,17 +41,21 @@ subpoena, because it never holds it. Billing metadata (which model, how many
 tokens, when) is the one thing PPQ does keep.
 
 **Altering the answers.** The provider's response is decrypted inside the
-enclave and encrypted to you again there. Nothing outside it can change a
-word, and the only code that handles the reply in the clear is the published,
-measured code anyone can read. This is not a hypothetical concern: an ordinary
+enclave and encrypted to you, the user, again there. Nothing outside it can
+change a word, and the only code that handles the reply in the clear is the
+published, measured code anyone can read. This is not a hypothetical concern: an ordinary
 API router is a plaintext proxy, and a 2026 study,
 [*Your Agent Is Mine*](https://arxiv.org/abs/2604.08407), found routers in
 the wild injecting malicious code into responses and exfiltrating credentials
 from the requests passing through them.
 
-**Quietly serving a different model.** The enclave cannot stop PPQ's backend
-from choosing a provider, but it reports the choice in a signed receipt,
-described next.
+**Quietly serving a different model.** The enclave's own code binds each
+model family to its provider: a request for a Claude model can only be sent
+to Anthropic, a GPT model only to OpenAI's endpoint on AWS Bedrock, a Gemini
+model only to Google, a `private/*` model only to Tinfoil. And every streamed
+response carries a receipt, signed by the enclave, naming the provider it
+connected to and the exact model it asked for. What you were served is a
+matter of record, not PPQ's word. Described next.
 
 **The same goes for AWS.** The enclave runs on AWS hardware, and AWS cannot
 read it either. The Nitro System is built so that no AWS operator, however
@@ -67,23 +71,22 @@ claims."
 
 ## A receipt for every request
 
-The enclave does not choose which provider serves your request; PPQ's backend
-does, at the credit check. So attestation alone cannot tell you that your
-request went to the model you paid for rather than a cheaper one.
+Attestation proves the enclave is running the published code. The routing
+receipt proves where that code sent your request.
 
-For that, every streamed response carries a **routing receipt**: a line,
-signed by the enclave with a key its attestation commits to, stating the model
-you asked for, the provider the enclave actually connected to, and the model
-id it sent there. It rides inside the encrypted response, so nothing outside
-the enclave can alter it, and it is a comment line that OpenAI-compatible
-clients ignore unless they look for it.
+Every streamed response carries one: a line, signed by the enclave with a key
+its attestation commits to, stating the model you asked for, the provider the
+enclave actually connected to, and the exact model id it sent there. It rides
+inside the encrypted response, so nothing outside the enclave can alter it,
+and it is a comment line that OpenAI-compatible clients ignore unless they
+look for it.
 
-A receipt does not stop PPQ from substituting a model. It makes any
-substitution undeniable: the statement comes from published, measured code and
-can be checked against source anyone can read. When a request went through
-OpenRouter, the receipt says so; in that case OpenRouter, not PPQ, picks the
-underlying provider. To verify a receipt against the enclave's attestation
-yourself, use
+Together with the family binding above, this leaves no room for a quiet swap:
+a request cannot be sent to the wrong company, and the exact model sent to the
+right one is stated in a signed line from published, measured code that
+anyone can check against the source. When a request went through OpenRouter,
+the receipt says so; in that case OpenRouter, not PPQ, picks the underlying
+provider. To verify a receipt against the enclave's attestation yourself, use
 [`verify-receipt.mjs`](https://github.com/PayPerQ/ppq-enclave-proxy/blob/main/client/verify-receipt.mjs)
 from the enclave repository.
 
