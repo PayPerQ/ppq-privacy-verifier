@@ -52,7 +52,12 @@ claims."
 
 **Quietly serving a different model from the one the user requested.** The
 worry is that you, the user, ask for Claude and PPQ secretly serves you a
-cheaper, less capable model instead. The enclave rules that out in two ways.
+cheaper, less capable model instead. This happens. In September 2026 an
+[independent investigation](https://kendell.dev/blog/crofaifalse/) found
+that CrofAI, which marketed itself as the cheapest inference provider, was
+silently routing requests for Kimi K3 and a dozen other models through
+OpenRouter to smaller, cheaper models. It has since gone offline. The
+enclave rules that out in two ways.
 
 First, its code binds each model family to its provider, with OpenRouter as
 the only fallback: a request for a Claude model can go to Anthropic or to
