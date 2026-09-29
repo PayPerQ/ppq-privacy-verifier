@@ -34,6 +34,18 @@ from the requests passing through them.
 from choosing a provider, but it reports the choice in a signed receipt,
 described next.
 
+**The same goes for AWS.** The enclave runs on AWS hardware, and AWS cannot
+read it either. The Nitro System is built so that no AWS operator, however
+privileged, can log in to the host or read the memory of what runs on it,
+and AWS states that this holds
+["including in fulfillment of a law enforcement request"](https://docs.aws.amazon.com/whitepapers/latest/overview-aws-european-sovereign-cloud/introduction.html).
+The design is described in
+[*The Security Design of the AWS Nitro System*](https://docs.aws.amazon.com/whitepapers/latest/security-design-of-aws-nitro-system/security-design-of-aws-nitro-system.html)
+and was independently reviewed by
+[NCC Group](https://www.nccgroup.com/research-blog/public-report-aws-nitro-system-api-security-claims/),
+who "found no gaps in the Nitro System that would compromise these security
+claims."
+
 ## A receipt for every request
 
 The enclave does not choose which provider serves your request; PPQ's backend
