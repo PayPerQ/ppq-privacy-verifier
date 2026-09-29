@@ -1,7 +1,7 @@
 # PPQ Privacy Verifier
 
 PPQ.AI, as of September 29th, 2026, is by default blind to the content of
-user queries through the use of AWS Nitro enclaves. This repository is an
+user chat queries through the use of AWS Nitro enclaves. This repository is an
 optional add-on tool for cryptographically verifying that the privacy promised
 in the previous sentence is actually happening.
 
@@ -30,11 +30,12 @@ For `private/*` models, the model itself runs inside a
 [Tinfoil](https://tinfoil.sh) enclave, and your prompt is decrypted only
 there. Nobody but you sees it: not PPQ, and not Tinfoil.
 
-## What the enclave keeps PPQ, and AWS, from doing
+## What the enclave keeps PPQ (and the enclave host, AWS) from doing
 
 **Reading or keeping your queries.** Your connection is decrypted only inside
-the enclave. The servers around it, PPQ's backend and PPQ's logs see
-ciphertext. There is nothing to harvest, sell or hand over: PPQ cannot
+the enclave. The servers around it see ciphertext; PPQ's backend and PPQ's
+logs never see the connection at all, only the billing metadata the enclave
+reports. There is nothing to harvest, sell or hand over: PPQ cannot
 release the content of your queries to a third party, or produce it under a
 subpoena, because it never holds it. Billing metadata (which model, how many
 tokens, when) is the one thing PPQ does keep.
