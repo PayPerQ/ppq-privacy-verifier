@@ -82,32 +82,38 @@ To verify a receipt against the enclave's attestation yourself, use
 [`verify-receipt.mjs`](https://github.com/PayPerQ/ppq-enclave-proxy/blob/main/client/verify-receipt.mjs)
 from the enclave repository.
 
-## What the proxy does
+## What this "PPQ Privacy Verifier" repo actually does
 
-Point any OpenAI- or Anthropic-compatible client at it. When the proxy starts,
-it verifies the enclave's attestation against the published code measurement.
-Every request that leaves your computer is then encrypted to a key only that
-verified enclave holds. Which enclave depends on the model.
+It is a small proxy you run on your own machine. Point any OpenAI- or
+Anthropic-compatible client at it instead of at PPQ directly.
 
-### Frontier models: Claude, GPT, Gemini, …
+When it starts, it fetches the enclave's attestation and checks it against
+the published code measurement. If they do not match, it refuses to send
+anything. If they do, every request you make is encrypted to a key that only
+that verified enclave holds, and the response is decrypted back on your
+machine.
 
-The proxy verifies PPQ's Nitro enclave and encrypts your query to it. The
-enclave forwards the query to the model's provider.
+You get the same privacy without it: every request enters the enclave either
+way. What the proxy adds is that *you* checked the enclave, rather than
+trusting PPQ to have done it.
 
-PPQ cannot read your query. The provider can.
+## What about TEE models?
 
-### `private/*` models
+PPQ has two things with an enclave in the story, and they are worth keeping
+apart.
 
-PPQ also offers `private/*` models: open-weight models that run inside a
-[Tinfoil](https://tinfoil.sh) enclave rather than at a provider, so your
-prompt is decrypted only where the model itself runs. The proxy verifies that
-enclave and encrypts your query to it. PPQ's enclave relays the ciphertext and
-bills your key; it cannot read the query.
+**The TEE router** is everything described above: PPQ's own Nitro enclave,
+which receives your encrypted request, decrypts it inside, and forwards it to
+the model's provider. It hides your prompt from PPQ. The provider (Anthropic,
+Google, and so on) still sees it, because that is where the model runs.
 
-Nobody but you can read your query. Not PPQ, and not Tinfoil.
+**TEE models** are the `private/*` models: open-weight models such as Kimi
+and GLM that run inside a [Tinfoil](https://tinfoil.sh) enclave. Your prompt
+is decrypted only there, where the model itself runs. Nobody sees it: not
+PPQ, and not Tinfoil.
 
-## Without the proxy
-
-You get the same privacy without it. A plain API request still enters PPQ's
-enclave, and for `private/*` models the enclave verifies Tinfoil and encrypts
-to it on your behalf. What the proxy adds is that *you* did the verifying.
+With the proxy, a `private/*` request is encrypted on your machine directly
+to Tinfoil's enclave, and PPQ's enclave only relays the ciphertext and bills
+your key. Without the proxy, PPQ's enclave verifies Tinfoil and does that
+encryption for you. Either way the trust ends at Tinfoil's enclave; with the
+proxy, you verified it yourself.
