@@ -49,13 +49,17 @@ API router is a plaintext proxy, and a 2026 study,
 the wild injecting malicious code into responses and exfiltrating credentials
 from the requests passing through them.
 
-**Quietly serving a different model.** The enclave's own code binds each
-model family to its provider: a request for a Claude model can only be sent
-to Anthropic, a GPT model only to OpenAI's endpoint on AWS Bedrock, a Gemini
-model only to Google, a `private/*` model only to Tinfoil. And every streamed
-response carries a receipt, signed by the enclave, naming the provider it
-connected to and the exact model it asked for. What you were served is a
-matter of record, not PPQ's word. Described next.
+**Quietly serving a different model.** The worry is that you ask for Claude
+and PPQ serves you a cheaper model instead. The enclave's own code rules that
+out. It binds each model family to its provider, with OpenRouter as the only
+fallback: a request for a Claude model can go to Anthropic or to OpenRouter,
+and nowhere else, and likewise for GPT, Gemini and `private/*` models. Every
+streamed response then carries a receipt, signed by the enclave, naming which
+of those it connected to and the exact model id it sent. So the only trust
+left is in the provider itself. PPQ cannot lie about where your request went
+or what it asked for; whether Anthropic or OpenRouter then ran that model is
+their promise, and one you would be relying on with or without PPQ.
+Described next.
 
 **The same goes for AWS.** The enclave runs on AWS hardware, and AWS cannot
 read it either. The Nitro System is built so that no AWS operator, however
@@ -82,11 +86,12 @@ and it is a comment line that OpenAI-compatible clients ignore unless they
 look for it.
 
 Together with the family binding above, this leaves no room for a quiet swap:
-a request cannot be sent to the wrong company, and the exact model sent to the
-right one is stated in a signed line from published, measured code that
-anyone can check against the source. When a request went through OpenRouter,
-the receipt says so; in that case OpenRouter, not PPQ, picks the underlying
-provider. To verify a receipt against the enclave's attestation yourself, use
+a request can only reach its model's provider or OpenRouter, and the exact
+model id sent there is stated in a signed line from published, measured code
+that anyone can check against the source. When a request went through
+OpenRouter, the receipt says so; in that case OpenRouter, not PPQ, picks the
+underlying provider, and the receipt's guarantee stops at OpenRouter's door.
+To verify a receipt against the enclave's attestation yourself, use
 [`verify-receipt.mjs`](https://github.com/PayPerQ/ppq-enclave-proxy/blob/main/client/verify-receipt.mjs)
 from the enclave repository.
 
