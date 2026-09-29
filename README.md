@@ -50,9 +50,9 @@ and was independently reviewed by
 who "found no gaps in the Nitro System that would compromise these security
 claims."
 
-**Quietly serving a different model.** The worry is that you, the user, ask
-for Claude and PPQ secretly serves you a cheaper, less capable model instead.
-The enclave rules that out in two ways.
+**Quietly serving a different model from the one the user requested.** The
+worry is that you, the user, ask for Claude and PPQ secretly serves you a
+cheaper, less capable model instead. The enclave rules that out in two ways.
 
 First, its code binds each model family to its provider, with OpenRouter as
 the only fallback: a request for a Claude model can go to Anthropic or to
