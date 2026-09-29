@@ -20,18 +20,6 @@ to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
-### Which enclave decrypts your prompt
-
-That depends on the model.
-
-For frontier models such as Claude, GPT and Gemini, it is PPQ's Nitro
-enclave. The enclave decrypts your prompt and forwards it to the model's
-provider, so the provider sees it. PPQ does not.
-
-For `private/*` models, the model itself runs inside a
-[Tinfoil](https://tinfoil.sh) enclave, and your prompt is decrypted only
-there. Nobody but you sees it: not PPQ, and not Tinfoil.
-
 ## What the enclave keeps PPQ (and the enclave host, AWS) from doing
 
 **Reading or keeping your queries.** Your connection is decrypted only inside
@@ -113,9 +101,11 @@ PPQ cannot read your query. The provider can.
 
 ### `private/*` models
 
-These models run inside a [Tinfoil](https://tinfoil.sh) enclave. The proxy
-verifies that enclave and encrypts your query to it. PPQ's enclave relays the
-ciphertext and bills your key; it cannot read the query.
+PPQ also offers `private/*` models: open-weight models that run inside a
+[Tinfoil](https://tinfoil.sh) enclave rather than at a provider, so your
+prompt is decrypted only where the model itself runs. The proxy verifies that
+enclave and encrypts your query to it. PPQ's enclave relays the ciphertext and
+bills your key; it cannot read the query.
 
 Nobody but you can read your query. Not PPQ, and not Tinfoil.
 
