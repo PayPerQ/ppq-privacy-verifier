@@ -54,11 +54,19 @@ claims."
 worry is that you, the user, ask for Claude and PPQ secretly serves you a
 cheaper, less capable model instead. This happens. In September 2026 an
 [independent investigation](https://kendell.dev/blog/crofaifalse/) found
-that CrofAI, which marketed itself as the cheapest inference provider, was
-taking requests for Kimi K3 and a dozen other models and quietly fulfilling
-them with smaller, cheaper models bought from OpenRouter. OpenRouter served
-what CrofAI asked it for; the swap was CrofAI's. It has since gone offline.
-The enclave rules that out in two ways.
+that CrofAI, which sold access to models like Kimi K3 at prices nobody else
+could match, was answering those requests with smaller, cheaper models such
+as GLM 5.3 Flash, bought from OpenRouter and returned under the Kimi K3
+label. OpenRouter served exactly what CrofAI asked it for; the swap was
+CrofAI's. Its owner admitted to part of it, the company is now
+[shutting down and refunding customers](https://www.nahcrof.com/), and
+within two weeks a second cheap provider was
+[publicly defending itself](https://x.com/Entelic_Aria/status/2103904103705559401)
+against the same accusation. As one observer
+[put it](https://x.com/zachmoskow/status/2099574648799125524): "If you
+cannot tell a customer exactly who is serving their inference, what model
+they are receiving, and where their data goes when capacity fails, you are
+not selling inference." The enclave rules that out in two ways.
 
 First, its code binds each model family to its provider, with OpenRouter as
 the only fallback: a request for a Claude model can go to Anthropic or to
