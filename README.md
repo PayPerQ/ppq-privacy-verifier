@@ -16,7 +16,10 @@ sent.
 
 **Reading or keeping your queries.** Your connection is decrypted only inside
 the enclave. The servers around it, PPQ's backend and PPQ's logs see
-ciphertext. There is nothing to harvest, sell or hand over.
+ciphertext. There is nothing to harvest, sell or hand over: PPQ cannot
+release the content of your queries to a third party, or produce it under a
+subpoena, because it never holds it. Billing metadata (which model, how many
+tokens, when) is the one thing PPQ does keep.
 
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and encrypted to you again there. Nothing outside it can change a
