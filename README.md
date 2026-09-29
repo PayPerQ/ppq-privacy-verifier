@@ -1,17 +1,18 @@
 # PPQ Privacy Verifier
 
-PPQ.AI is private by default. Every request is served inside an AWS Nitro
-enclave: your prompt is encrypted before it leaves your device and is not
-decrypted until it reaches an enclave, either PPQ's, which forwards it to the
-model's provider, or, for `private/*` models, the one where the model itself
-runs. PPQ's own backend sees a credit check and billing metadata, never your
-content.
+PPQ.AI, the product, is private by default. This repository is an optional
+tool for verifying that the privacy is actually happening.
 
-You do not have to take that on trust. The enclave's code is open source and
-reproducibly built, and this repository is a small proxy that runs on your
-machine and checks, before each request is sent, that the enclave it is about
-to talk to is running that published code. PPQ is private whether or not you
-use it; this is how you verify that for yourself.
+Every request to PPQ.AI is served inside an AWS Nitro enclave: your prompt is
+encrypted before it leaves your device and is not decrypted until it reaches
+an enclave, either PPQ's, which forwards it to the model's provider, or, for
+`private/*` models, the one where the model itself runs. PPQ's own backend
+sees a credit check and billing metadata, never your content.
+
+The enclave's code is open source and reproducibly built. This proxy runs on
+your machine and checks, before each request is sent, that the enclave it is
+about to talk to is running that published code, so you do not have to take
+PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
