@@ -146,6 +146,8 @@ your behalf.
 
 ## How other parts of PPQ's architecture aid in privacy
 
+![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
+
 PPQ has no accounts. You do not sign up, and giving an email address is
 optional. You buy credits, you get a credit id, and that id is all PPQ needs
 to serve you. Most users buy those credits with cryptocurrency: Bitcoin
@@ -170,8 +172,6 @@ Two caveats. Paying by card attaches your card details to your credit id at
 PPQ, though still not at the provider; pay with crypto if that matters to
 you. And your IP address is visible to PPQ's network edge like any web
 request, so use a VPN if you want that hidden too.
-
-![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
 
 \* OpenAI is currently the one exception. It requires a per-customer
 identifier on every request, so that one user's policy violation is scoped
