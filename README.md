@@ -101,11 +101,13 @@ trusting PPQ to have done it.
 
 ### What are TEE models?
 
-`private/*` models are open-weight models, such as Kimi and GLM, that PPQ
+Private TEE models are open-weight models, such as Kimi and GLM, that PPQ
 serves from inside a [Tinfoil](https://tinfoil.sh) enclave. The model itself
 runs inside the TEE. Your prompt is decrypted only there, and the answer is
-encrypted there before it leaves. Nobody else sees either one: not PPQ, and
-not Tinfoil. These are the models PPQ labels **E2EE**.
+encrypted there before it leaves. Nobody sees the content of your queries:
+not PPQ, and not even the provider, Tinfoil. These are the models PPQ labels
+**E2EE**. Read more about them in our blog post,
+[*Introducing Private AI Models*](https://ppq.ai/blog/introducing-tee-models).
 
 ### How do TEE models differ from the TEE router?
 
@@ -114,9 +116,10 @@ from PPQ, but it has to hand the prompt to the model's provider in the clear,
 because that is where Claude or GPT actually runs. The provider sees your
 prompt.
 
-With a TEE model there is no provider to hand it to. The enclave your prompt
-is decrypted in is the one running the model, so the only machine that ever
-holds your plaintext is the one producing your answer.
+With a TEE model the provider is Tinfoil, and Tinfoil cannot read your prompt
+or the answer either. The enclave your prompt is decrypted in is the one
+running the model, so the only machine that ever holds your plaintext is the
+one producing your answer.
 
 ### How are TEE models processed in conjunction with the TEE router?
 
