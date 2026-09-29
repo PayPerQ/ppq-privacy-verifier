@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=20"
   },
-  "description": "Verify PPQ.AI's privacy yourself. A local proxy that checks the attestation of the enclave your request is headed for and encrypts it to that enclave before it leaves your machine: PPQ's Nitro enclave for frontier models, Tinfoil's for private/* models. Standalone or OpenClaw plugin.",
+  "description": "Verify PPQ.AI's privacy yourself. A local proxy that checks the attestation of the enclave your request is headed for and encrypts it to that enclave before it leaves your machine. Standalone or OpenClaw plugin.",
   "license": "MIT",
   "openclaw": {
     "extensions": [
