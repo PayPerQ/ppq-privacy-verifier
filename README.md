@@ -24,7 +24,11 @@ tokens, when) is the one thing PPQ does keep.
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and encrypted to you again there. Nothing outside it can change a
 word, and the only code that handles the reply in the clear is the published,
-measured code anyone can read.
+measured code anyone can read. This is not a hypothetical concern: an ordinary
+API router is a plaintext proxy, and a 2026 study,
+[*Your Agent Is Mine*](https://arxiv.org/abs/2604.08407), found routers in
+the wild injecting malicious code into responses and exfiltrating credentials
+from the requests passing through them.
 
 **Quietly serving a different model.** The enclave cannot stop PPQ's backend
 from choosing a provider, but it reports the choice in a signed receipt,
