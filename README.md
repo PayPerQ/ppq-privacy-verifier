@@ -5,6 +5,8 @@ user chat queries through the use of AWS Nitro enclaves. This repository is an
 optional add-on tool for cryptographically verifying that the privacy promised
 in the previous sentence is actually happening.
 
+## How it works
+
 Every chat request to PPQ.AI is now served inside an AWS Nitro enclave: your
 prompt is encrypted before it leaves your device and is not decrypted until it
 reaches an enclave. PPQ's own backend sees a credit check and billing
@@ -18,7 +20,7 @@ to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
-## Which enclave decrypts your prompt
+### Which enclave decrypts your prompt
 
 That depends on the model.
 
