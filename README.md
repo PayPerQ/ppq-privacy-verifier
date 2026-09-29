@@ -12,7 +12,7 @@ that the enclave running in production is the code that was published. This
 proxy is how you do that check yourself, on your machine, before anything is
 sent.
 
-## What the enclave keeps PPQ from doing
+## What the enclave keeps PPQ, and AWS, from doing
 
 **Reading or keeping your queries.** Your connection is decrypted only inside
 the enclave. The servers around it, PPQ's backend and PPQ's logs see
