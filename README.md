@@ -143,3 +143,30 @@ that neither PPQ nor AWS can read, on its way to Tinfoil.
 Both paths end in the same place, and on both PPQ is blind. The difference is
 who verified Tinfoil: on path 1, you did; on path 2, PPQ's enclave did it on
 your behalf.
+
+## How PPQ's payments add to this
+
+PPQ has no accounts. You do not sign up, give an email address or verify a
+phone number. You buy credits, you get a credit id, and that id is all PPQ
+needs to serve you. Most users buy those credits with cryptocurrency: Bitcoin
+(on-chain or Lightning), Litecoin, Dogecoin or Monero.
+
+Put together with the enclave, that splits what anyone can know about you
+into pieces that never meet:
+
+- **PPQ** knows a credit id, how it was funded, and billing metadata: which
+  model, how many tokens, when. If the credits were bought with crypto, none
+  of that points at a person.
+- **The model's provider** (Anthropic, Google, and so on) sees your prompt,
+  but the request arrives from PPQ's enclave under PPQ's credentials. The
+  provider sees PPQ, not you.
+- **Tinfoil**, for private TEE models, sees neither your prompt nor you.
+
+So the party that could read your prompt does not know who you are, and the
+party that knows how you paid cannot read your prompt. The content and the
+identity never sit in the same place.
+
+Two caveats. Paying by card attaches your card details to your credit id at
+PPQ, though still not at the provider; pay with crypto if that matters to
+you. And your IP address is visible to PPQ's network edge like any web
+request, so use a VPN if you want that hidden too.
