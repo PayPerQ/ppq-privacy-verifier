@@ -159,12 +159,7 @@ into pieces that never meet:
   of that points at a person.
 - **The model's provider** (Anthropic, Google, and so on) sees your prompt,
   but the request arrives from PPQ's enclave under PPQ's credentials. The
-  provider sees PPQ, not you. One exception: OpenAI requires a per-customer
-  identifier on every request, so that one user's policy violation is scoped
-  to that user rather than to all of PPQ. For OpenAI models the enclave
-  attaches a keyed hash of your credit id. OpenAI can tell that a set of
-  requests came from the same customer, but cannot turn the hash back into a
-  credit id, let alone a person.
+  provider sees PPQ, not you.\*
 - **Tinfoil**, for private TEE models, sees neither your prompt nor you.
 
 So the party that could read your prompt does not know who you are, and the
@@ -177,3 +172,10 @@ you. And your IP address is visible to PPQ's network edge like any web
 request, so use a VPN if you want that hidden too.
 
 ![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
+
+\* OpenAI is the one exception. It requires a per-customer identifier on
+every request, so that one user's policy violation is scoped to that user
+rather than to all of PPQ. For OpenAI models the enclave attaches a keyed
+hash of your credit id. OpenAI can tell that a set of requests came from the
+same customer, but cannot turn the hash back into a credit id, let alone a
+person.
