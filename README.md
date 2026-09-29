@@ -12,12 +12,26 @@ that the enclave running in production is the code that was published. This
 proxy is how you do that check yourself, on your machine, before anything is
 sent.
 
+## What the enclave keeps PPQ from doing
+
+**Reading or keeping your queries.** Your connection is decrypted only inside
+the enclave. The servers around it, PPQ's backend and PPQ's logs see
+ciphertext. There is nothing to harvest, sell or hand over.
+
+**Altering the answers.** The provider's response is decrypted inside the
+enclave and encrypted to you again there. Nothing outside it can change a
+word, and the only code that handles the reply in the clear is the published,
+measured code anyone can read.
+
+**Quietly serving a different model.** The enclave cannot stop PPQ's backend
+from choosing a provider, but it reports the choice in a signed receipt,
+described next.
+
 ## A receipt for every request
 
-Privacy is not the only thing worth verifying. The enclave does not choose
-which provider serves your request; PPQ's backend does, at the credit check.
-So attestation alone cannot tell you that your request went to the model you
-paid for rather than a cheaper one.
+The enclave does not choose which provider serves your request; PPQ's backend
+does, at the credit check. So attestation alone cannot tell you that your
+request went to the model you paid for rather than a cheaper one.
 
 For that, every streamed response carries a **routing receipt**: a line,
 signed by the enclave with a key its attestation commits to, stating the model
