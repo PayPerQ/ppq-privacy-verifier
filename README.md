@@ -59,9 +59,7 @@ cheaper, less capable model instead. This happens. In September 2026 an
 that CrofAI, which sold access to models like Kimi K3 at prices nobody else
 could match, was answering those requests with smaller, cheaper models such
 as GLM 5.3 Flash, bought from OpenRouter and returned under the Kimi K3
-label. OpenRouter served exactly what CrofAI asked it for; the swap was
-CrofAI's. Its owner admitted to part of it, and the company is now shutting
-down and refunding customers. The enclave rules that out in two ways.
+label. The enclave rules that out in two ways.
 
 First, its code binds each model family to its provider, with OpenRouter as
 the only fallback: a request for a Claude model can go to Anthropic or to
