@@ -1,9 +1,10 @@
 # PPQ Privacy Verifier
 
 Every request to PPQ.AI is served inside an AWS Nitro enclave. Your prompt is
-encrypted to the enclave, decrypted only inside it, and sent from there to the
-model's provider. PPQ's own backend sees a credit check and billing metadata,
-never your content.
+encrypted before it leaves your device and is not decrypted until it reaches
+an enclave: PPQ's, which forwards it to the model's provider, or, for
+`private/*` models, the one where the model itself runs. PPQ's own backend
+sees a credit check and billing metadata, never your content.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
