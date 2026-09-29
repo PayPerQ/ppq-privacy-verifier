@@ -65,4 +65,4 @@ PPQ_ALLOWED_ORIGINS="http://localhost:3000" npx ppq-private-mode
 Only add origins you control. Earlier versions answered
 `Access-Control-Allow-Origin: *`, which let any website a user visited spend
 their credits and read the replies — see
-[issue #28](https://github.com/PayPerQ/ppq-private-mode-proxy/issues/28).
+[issue #28](https://github.com/PayPerQ/ppq-privacy-verifier/issues/28).

@@ -100,7 +100,7 @@ export ANTHROPIC_MODEL="private/glm-5-3"</code></pre>
 <ul>${modelList}</ul>
 
 <footer>
-  <a href="https://github.com/PayPerQ/ppq-private-mode-proxy" target="_blank" rel="noopener">Source</a> ·
+  <a href="https://github.com/PayPerQ/ppq-privacy-verifier" target="_blank" rel="noopener">Source</a> ·
   <a href="https://ppq.ai" target="_blank" rel="noopener">PPQ.AI</a>
 </footer>
 
