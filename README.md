@@ -22,39 +22,26 @@ to take PPQ's word for it.
 
 ## What the enclave keeps PPQ (and the enclave host, AWS) from doing
 
-**Reading or keeping your queries.** Your connection is decrypted only inside
-the enclave. The servers around it see ciphertext; PPQ's backend and PPQ's
-logs never see the connection at all, only the billing metadata the enclave
-reports. There is nothing to harvest, sell or hand over: PPQ cannot
-release the content of your queries to a third party, or produce it under a
-subpoena, because it never holds it. Billing metadata (which model, how many
-tokens, when) is the one thing PPQ does keep.
+**Reading or keeping your queries.** Your request is decrypted only inside
+the enclave. PPQ's backend and PPQ's logs never see the request content at
+all, only the billing metadata the enclave reports. There is nothing to
+harvest, sell or hand over: PPQ cannot release the content of your queries to
+a third party, or produce it under a subpoena, because it never holds it.
+Billing metadata (which model, how many tokens, when) is the one thing PPQ
+does keep.
 
 **Altering the answers.** The provider's response is decrypted inside the
-enclave and encrypted to you, the user, again there. Nothing outside it can
-change a word, and the only code that handles the reply in the clear is the
-published, measured code anyone can read. This is not a hypothetical concern: an ordinary
-API router is a plaintext proxy, and a 2026 study,
-[*Your Agent Is Mine*](https://arxiv.org/abs/2604.08407), found routers in
-the wild injecting malicious code into responses and exfiltrating credentials
-from the requests passing through them.
-
-**Quietly serving a different model.** The worry is that you ask for Claude
-and PPQ serves you a cheaper model instead. The enclave's own code rules that
-out. It binds each model family to its provider, with OpenRouter as the only
-fallback: a request for a Claude model can go to Anthropic or to OpenRouter,
-and nowhere else, and likewise for GPT, Gemini and `private/*` models. Every
-streamed response then carries a receipt, signed by the enclave, naming which
-of those it connected to and the exact model id it sent. So the only trust
-left is in the provider itself. PPQ cannot lie about where your request went
-or what it asked for; whether Anthropic or OpenRouter then ran that model is
-their promise, and one you would be relying on with or without PPQ.
-Described next.
+enclave and then encrypted back to you, the user. PPQ cannot change a word,
+and the only code that handles the reply in the clear is the published,
+measured code anyone can read. This is not a hypothetical concern: a 2026
+study, [*Your Agent Is Mine*](https://arxiv.org/abs/2604.08407), found AI
+routers in the wild injecting malicious code into responses and exfiltrating
+credentials from the requests passing through them.
 
 **The same goes for AWS.** The enclave runs on AWS hardware, and AWS cannot
-read it either. The Nitro System is built so that no AWS operator, however
-privileged, can log in to the host or read the memory of what runs on it,
-and AWS states that this holds
+read or manipulate it either. The Nitro System is built so that no AWS
+operator, however privileged, can log in to the host or read or write to the
+memory of what runs on it, and AWS states that this holds
 ["including in fulfillment of a law enforcement request"](https://docs.aws.amazon.com/whitepapers/latest/overview-aws-european-sovereign-cloud/introduction.html).
 The design is described in
 [*The Security Design of the AWS Nitro System*](https://docs.aws.amazon.com/whitepapers/latest/security-design-of-aws-nitro-system/security-design-of-aws-nitro-system.html)
@@ -62,6 +49,16 @@ and was independently reviewed by
 [NCC Group](https://www.nccgroup.com/research-blog/public-report-aws-nitro-system-api-security-claims/),
 who "found no gaps in the Nitro System that would compromise these security
 claims."
+
+**Quietly serving a different model.** The worry is that you, the user, ask
+for Claude and PPQ secretly serves you a cheaper, less capable model instead.
+The enclave's own code rules that out. It binds each model family to its
+provider, with OpenRouter as the only fallback: a request for a Claude model
+can go to Anthropic or to OpenRouter, and nowhere else, and likewise for GPT,
+Gemini and `private/*` models. You never have to trust that PPQ is delivering
+you the correct model and provider. Every streamed response carries a
+receipt, signed by the enclave, naming which model was served and through
+which provider. So the only trust left is in the provider itself.
 
 ## A receipt for every request
 
