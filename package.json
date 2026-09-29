@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=20"
   },
-  "description": "Local encryption proxy for PPQ.AI. Prompts are encrypted to a verified hardware enclave so PPQ.AI cannot read them; open-weight private/* models run inside the enclave, proprietary models are forwarded to their provider. Standalone or OpenClaw plugin.",
+  "description": "Verify PPQ.AI's privacy yourself. A local proxy that checks the attestation of the enclave your request is headed for and encrypts it to that enclave before it leaves your machine: PPQ's Nitro enclave for frontier models, Tinfoil's for private/* models. Standalone or OpenClaw plugin.",
   "license": "MIT",
   "openclaw": {
     "extensions": [
@@ -46,5 +46,6 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0"
-  }
+  },
+  "repository": "github:PayPerQ/ppq-privacy-verifier"
 }
