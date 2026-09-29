@@ -20,7 +20,7 @@ not have to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
-## What the enclave keeps PPQ (and the enclave host, AWS) from doing
+## What the enclave keeps PPQ from doing
 
 **Reading or keeping your queries.** Your request is decrypted only inside
 the enclave. PPQ's backend and PPQ's logs never see the request content at
