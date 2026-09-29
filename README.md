@@ -33,10 +33,12 @@ the one thing PPQ does keep.
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and then encrypted back to you, the user. PPQ cannot change a word,
 and the only code that handles the reply in the clear is the published,
-measured code anyone can read. This is not a hypothetical concern: a 2026
-study, [*Your Agent Is Mine*](https://arxiv.org/abs/2604.08407), found AI
-routers in the wild injecting malicious code into responses and exfiltrating
-credentials from the requests passing through them.
+measured code anyone can read. This is not a hypothetical concern: in April
+2026 security researchers
+[reported](https://x.com/shoucccc/status/2042423713019412941) finding 26
+LLM routers in the wild secretly injecting malicious tool calls and stealing
+credentials from the requests passing through them, one of which drained a
+client's $500k wallet.
 
 **The same goes for AWS.** The enclave runs on AWS hardware, and AWS cannot
 read or manipulate it either. The Nitro System is built so that no AWS
