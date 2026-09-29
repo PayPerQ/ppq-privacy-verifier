@@ -5,18 +5,18 @@ user chat queries through the use of AWS Nitro enclaves. This repository is an
 optional add-on tool for cryptographically verifying that the privacy promised
 in the previous sentence is actually happening.
 
-## How it works
+## How PPQ's enclave router works
 
 Every chat request to PPQ.AI is now served inside an AWS Nitro enclave: your
 prompt is encrypted before it leaves your device and is not decrypted until it
 reaches an enclave. PPQ's own backend sees a credit check and billing
 metadata, never your content.
 
-The enclave's code is open source and reproducibly built. This proxy runs on
-your machine. When it starts, it checks that the enclave it is about to talk
-to is running that published code, and every request it then sends is
-encrypted to a key that only that verified enclave holds, so you do not have
-to take PPQ's word for it.
+The enclave's code is open source and reproducibly built. The code in this
+repo runs on your machine. When it starts, it checks that the enclave it is
+about to talk to is running that published code, and every request it then
+sends is encrypted to a key that only that verified enclave holds, so you do
+not have to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
@@ -26,9 +26,9 @@ to take PPQ's word for it.
 the enclave. PPQ's backend and PPQ's logs never see the request content at
 all, only the billing metadata the enclave reports. There is nothing to
 harvest, sell or hand over: PPQ cannot release the content of your queries to
-a third party, or produce it under a subpoena, because it never holds it.
-Billing metadata (which model, how many tokens, when) is the one thing PPQ
-does keep.
+a third party, or produce it under a subpoena, because it never holds it in
+an extractable way. Billing metadata (which model, how many tokens, when) is
+the one thing PPQ does keep.
 
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and then encrypted back to you, the user. PPQ cannot change a word,
@@ -52,33 +52,27 @@ claims."
 
 **Quietly serving a different model.** The worry is that you, the user, ask
 for Claude and PPQ secretly serves you a cheaper, less capable model instead.
-The enclave's own code rules that out. It binds each model family to its
-provider, with OpenRouter as the only fallback: a request for a Claude model
-can go to Anthropic or to OpenRouter, and nowhere else, and likewise for GPT,
-Gemini and `private/*` models. You never have to trust that PPQ is delivering
-you the correct model and provider. Every streamed response carries a
-receipt, signed by the enclave, naming which model was served and through
-which provider. So the only trust left is in the provider itself.
+The enclave rules that out in two ways.
 
-## A receipt for every request
+First, its code binds each model family to its provider, with OpenRouter as
+the only fallback: a request for a Claude model can go to Anthropic or to
+OpenRouter, and nowhere else, and likewise for GPT, Gemini and others.
 
-Attestation proves the enclave is running the published code. The routing
-receipt proves where that code sent your request.
+Second, every streamed response carries a **routing receipt**: a line, signed
+by the enclave with a key its attestation commits to, stating the model you
+asked for, the provider the enclave actually connected to, and the exact
+model id it sent there. It rides inside the encrypted response, so nothing
+outside the enclave can alter it, and it is a comment line that
+OpenAI-compatible clients ignore unless they look for it.
 
-Every streamed response carries one: a line, signed by the enclave with a key
-its attestation commits to, stating the model you asked for, the provider the
-enclave actually connected to, and the exact model id it sent there. It rides
-inside the encrypted response, so nothing outside the enclave can alter it,
-and it is a comment line that OpenAI-compatible clients ignore unless they
-look for it.
-
-Together with the family binding above, this leaves no room for a quiet swap:
-a request can only reach its model's provider or OpenRouter, and the exact
-model id sent there is stated in a signed line from published, measured code
-that anyone can check against the source. When a request went through
-OpenRouter, the receipt says so; in that case OpenRouter, not PPQ, picks the
-underlying provider, and the receipt's guarantee stops at OpenRouter's door.
-To verify a receipt against the enclave's attestation yourself, use
+Attestation proves the enclave is running the published code; the receipt
+proves where that code sent your request. Between them there is no room for
+a quiet swap, and you never have to trust that PPQ delivered the model and
+provider you paid for. The only trust left is in the provider itself. When a
+request went through OpenRouter, the receipt says so; in that case
+OpenRouter, not PPQ, picks the underlying provider, and the receipt's
+guarantee stops at OpenRouter's door. To verify a receipt against the
+enclave's attestation yourself, use
 [`verify-receipt.mjs`](https://github.com/PayPerQ/ppq-enclave-proxy/blob/main/client/verify-receipt.mjs)
 from the enclave repository.
 
