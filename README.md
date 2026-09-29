@@ -170,3 +170,5 @@ Two caveats. Paying by card attaches your card details to your credit id at
 PPQ, though still not at the provider; pay with crypto if that matters to
 you. And your IP address is visible to PPQ's network edge like any web
 request, so use a VPN if you want that hidden too.
+
+![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
