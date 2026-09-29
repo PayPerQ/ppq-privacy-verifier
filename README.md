@@ -173,9 +173,11 @@ request, so use a VPN if you want that hidden too.
 
 ![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
 
-\* OpenAI is the one exception. It requires a per-customer identifier on
-every request, so that one user's policy violation is scoped to that user
-rather than to all of PPQ. For OpenAI models the enclave attaches a keyed
-hash of your credit id. OpenAI can tell that a set of requests came from the
-same customer, but cannot turn the hash back into a credit id, let alone a
-person.
+\* OpenAI is currently the one exception. It requires a per-customer
+identifier on every request, so that one user's policy violation is scoped
+to that user rather than to all of PPQ. For OpenAI models the enclave
+attaches a keyed hash of your credit id. OpenAI can tell that a set of
+requests came from the same customer, but cannot turn the hash back into a
+credit id, let alone a person. Other providers may add the same requirement
+in the future; if they do, PPQ will handle it the same way, and this note
+will be updated.
