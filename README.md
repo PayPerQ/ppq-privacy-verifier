@@ -144,12 +144,12 @@ Both paths end in the same place, and on both PPQ is blind. The difference is
 who verified Tinfoil: on path 1, you did; on path 2, PPQ's enclave did it on
 your behalf.
 
-## How PPQ's payments add to this
+## How other parts of PPQ's architecture aid in privacy
 
-PPQ has no accounts. You do not sign up, give an email address or verify a
-phone number. You buy credits, you get a credit id, and that id is all PPQ
-needs to serve you. Most users buy those credits with cryptocurrency: Bitcoin
-(on-chain or Lightning), Litecoin, Dogecoin or Monero.
+PPQ has no accounts. You do not sign up, and giving an email address is
+optional. You buy credits, you get a credit id, and that id is all PPQ needs
+to serve you. Most users buy those credits with cryptocurrency: Bitcoin
+(on-chain or Lightning), Monero, stablecoins and other coins.
 
 Put together with the enclave, that splits what anyone can know about you
 into pieces that never meet:
@@ -159,7 +159,12 @@ into pieces that never meet:
   of that points at a person.
 - **The model's provider** (Anthropic, Google, and so on) sees your prompt,
   but the request arrives from PPQ's enclave under PPQ's credentials. The
-  provider sees PPQ, not you.
+  provider sees PPQ, not you. One exception: OpenAI requires a per-customer
+  identifier on every request, so that one user's policy violation is scoped
+  to that user rather than to all of PPQ. For OpenAI models the enclave
+  attaches a keyed hash of your credit id. OpenAI can tell that a set of
+  requests came from the same customer, but cannot turn the hash back into a
+  credit id, let alone a person.
 - **Tinfoil**, for private TEE models, sees neither your prompt nor you.
 
 So the party that could read your prompt does not know who you are, and the
