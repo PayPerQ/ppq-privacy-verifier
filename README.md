@@ -12,9 +12,9 @@ Anthropic-compatible client at it instead of at PPQ directly.
 
 When it starts, it fetches the enclave's attestation and checks it against
 the published code measurement. If they do not match, it refuses to send
-anything. If they do, every request you make is encrypted to a key that only
-that verified enclave holds, and the response is decrypted back on your
-machine.
+anything. If they do, every request you make is encrypted with EHBP
+(Encrypted HTTP Body Protocol) to a key that only that verified enclave
+holds, and the response is decrypted back on your machine.
 
 You get the same privacy without it: every request enters the enclave either
 way. What the proxy adds is that *you* checked the enclave, rather than
@@ -35,15 +35,15 @@ not have to take PPQ's word for it.
 
 ![How a request moves through PPQ's enclave](docs/img/ppq-enclave-flow.png)
 
-## What the enclave keeps PPQ from doing
+## What the enclave router prevents PPQ from doing
 
 **Reading or keeping your queries.** Your request is decrypted only inside
 the enclave. PPQ's backend and PPQ's logs never see the request content at
-all, only the billing metadata the enclave reports. There is nothing to
+all, only the billing and request metadata make it to PPQ's back end for processing. There is nothing to
 harvest, sell or hand over: PPQ cannot release the content of your queries to
 a third party, or produce it under a subpoena, because it never holds it in
-an extractable way. Billing metadata (which model, how many tokens, when) is
-the one thing PPQ does keep.
+an extractable way. Billing and request metadata (which model, how many tokens, potential errors) is
+the things that PPQ does keep in order to maintain its service and ensure user experience.
 
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and then encrypted back to you, the user. PPQ cannot change a word,
