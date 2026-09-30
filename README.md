@@ -110,6 +110,20 @@ proxy can verify Tinfoil's enclave for you as well. How they differ from the
 enclave router, and what changes with and without the proxy, is covered in
 [PPQ's end-to-end encrypted models](docs/e2ee-models.md).
 
+## What the enclave router does not cover yet
+
+Today the enclave router handles chat only: every chat completion, from the
+web app or the API, is served inside the enclave. Everything else PPQ offers
+is not yet routed through it. Image, video and music generation, text to
+speech, speech to text and the other media endpoints are still handled by
+PPQ's backend directly, so for those requests PPQ's servers do see the
+request content, and the privacy of each one rests on the provider's own
+data policy rather than on the enclave.
+
+Bringing those request types into the enclave is planned, and this README
+and PPQ's [Privacy Policy](https://ppq.ai/privacy) will be updated as each
+one moves over.
+
 ## How other parts of PPQ's architecture aid in privacy
 
 ![PayPerQ: access to all of the latest AI models, without subscriptions, paid by card or crypto](docs/img/payperq-models-and-payments.png)
