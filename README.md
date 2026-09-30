@@ -39,11 +39,13 @@ not have to take PPQ's word for it.
 
 **Reading or keeping your queries.** Your request is decrypted only inside
 the enclave. PPQ's backend and PPQ's logs never see the request content at
-all, only the billing and request metadata make it to PPQ's back end for processing. There is nothing to
-harvest, sell or hand over: PPQ cannot release the content of your queries to
-a third party, or produce it under a subpoena, because it never holds it in
-an extractable way. Billing and request metadata (which model, how many tokens, potential errors) is
-the things that PPQ does keep in order to maintain its service and ensure user experience.
+all; only billing and request metadata reach PPQ's backend for processing.
+There is nothing to harvest, sell or hand over: PPQ cannot release the
+content of your queries to a third party, or produce it under a subpoena,
+because it never holds it in an extractable way. Billing and request
+metadata (which model, how many tokens, whether an error occurred) are the
+only things PPQ keeps, in order to run the service and keep it working for
+you.
 
 **Altering the answers.** The provider's response is decrypted inside the
 enclave and then encrypted back to you, the user. PPQ cannot change a word,
