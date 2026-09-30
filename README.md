@@ -1,9 +1,24 @@
 # PPQ Privacy Verifier
 
-PPQ.AI, as of September 29th, 2026, is **by default blind** to the content of
-user chat queries through the use of AWS Nitro enclaves. This repository is an
+PPQ.AI, as of September 29th, 2026, is by default **blind to the content of
+user chat queries** through the use of AWS Nitro enclaves. This repository is an
 optional add-on tool for cryptographically verifying that the privacy promised
 in the previous sentence is actually happening.
+
+## What this "PPQ Privacy Verifier" repo actually does
+
+It is a small proxy you run on your own machine. Point any OpenAI- or
+Anthropic-compatible client at it instead of at PPQ directly.
+
+When it starts, it fetches the enclave's attestation and checks it against
+the published code measurement. If they do not match, it refuses to send
+anything. If they do, every request you make is encrypted to a key that only
+that verified enclave holds, and the response is decrypted back on your
+machine.
+
+You get the same privacy without it: every request enters the enclave either
+way. What the proxy adds is that *you* checked the enclave, rather than
+trusting PPQ to have done it.
 
 ## How PPQ's enclave router works
 
@@ -82,21 +97,6 @@ guarantee stops at OpenRouter's door. To verify a receipt against the
 enclave's attestation yourself, use
 [`verify-receipt.mjs`](https://github.com/PayPerQ/ppq-enclave-proxy/blob/main/client/verify-receipt.mjs)
 from the enclave repository.
-
-## What this "PPQ Privacy Verifier" repo actually does
-
-It is a small proxy you run on your own machine. Point any OpenAI- or
-Anthropic-compatible client at it instead of at PPQ directly.
-
-When it starts, it fetches the enclave's attestation and checks it against
-the published code measurement. If they do not match, it refuses to send
-anything. If they do, every request you make is encrypted to a key that only
-that verified enclave holds, and the response is decrypted back on your
-machine.
-
-You get the same privacy without it: every request enters the enclave either
-way. What the proxy adds is that *you* checked the enclave, rather than
-trusting PPQ to have done it.
 
 ## What about PPQ's offering of end-to-end encrypted models?
 
