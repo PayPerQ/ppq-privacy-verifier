@@ -1,6 +1,6 @@
 # PPQ Privacy Verifier
 
-PPQ.AI, as of September 29th, 2026, is by default blind to the content of
+PPQ.AI, as of September 29th, 2026, is **by default blind** to the content of
 user chat queries through the use of AWS Nitro enclaves. This repository is an
 optional add-on tool for cryptographically verifying that the privacy promised
 in the previous sentence is actually happening.
