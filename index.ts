@@ -105,7 +105,6 @@ export default function register(api: any) {
                     "private/gpt-oss-120b",
                     "private/llama3-3-70b",
                     "private/glm-5-3",
-                    "private/glm-5-3-flash",
                     "private/gemma4-31b",
                     "private/deepseek-v4-1-flash",
                   ],
@@ -185,16 +184,6 @@ export default function register(api: any) {
           // moved up, so none of 5.2's numbers carried over. horse-power bills
           // the enclave's attested cached tokens at that tier (hp #723).
           cost: { input: 1.9, output: 6.07, cacheRead: 0.47, cacheWrite: 0 },
-          contextWindow: 1048576,
-          maxTokens: 8192,
-        },
-        {
-          id: "private/glm-5-3-flash",
-          name: "GLM-5.3 Flash (Private)",
-          reasoning: true,
-          input: ["text", "image"],
-          // $0.40 / $1.25 × 1.055; cached input $0.10 × 1.055 (hp #723).
-          cost: { input: 0.42, output: 1.32, cacheRead: 0.11, cacheWrite: 0 },
           contextWindow: 1048576,
           maxTokens: 8192,
         },
