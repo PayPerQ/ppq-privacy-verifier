@@ -169,6 +169,22 @@ const PRIVATE_MODEL_MAP: Record<string, string> = {
 /** All available private model IDs (user-facing) */
 const PRIVATE_MODELS = Object.keys(PRIVATE_MODEL_MAP);
 
+/**
+ * Tinfoil's router rejects `tools: []` ("tools must not be an empty array")
+ * and a `tool_choice` with no tools, where most providers ignore both. Agents
+ * built on opencode or the OpenAI SDK send an empty array whenever no tool is
+ * registered, so the body is normalised here, before it is sealed — the
+ * enclave cannot see inside a Class A body. Mirrors horse-power's direct path.
+ */
+export function stripEmptyTools(body: Record<string, unknown>): void {
+  if (Array.isArray(body.tools) && body.tools.length === 0) {
+    delete body.tools;
+  }
+  if (body.tools === undefined && "tool_choice" in body) {
+    delete body.tool_choice;
+  }
+}
+
 /** OpenAI-format model list response */
 const MODEL_LIST_RESPONSE = {
   object: "list",
@@ -866,6 +882,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
               `→ [openai] ${routed.modelId} (tinfoil: ${routed.enclaveModelId}), stream: ${!!parsed.stream}`
             );
           }
+          stripEmptyTools(parsed);
           await inlineDocuments(parsed, upstreamAuth);
           response = await forwardEncrypted(parsed, routed.modelId, upstreamAuth, toolId);
         } else {
@@ -946,6 +963,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
             );
           }
           await inlineDocuments(openaiBody, upstreamAuth);
+          stripEmptyTools(openaiBody);
           response = await forwardEncrypted(openaiBody, routed.modelId, upstreamAuth, toolId);
         } else {
           // Nitro enclave: model passes through verbatim
