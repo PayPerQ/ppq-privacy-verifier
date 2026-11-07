@@ -159,6 +159,7 @@ const NO_KEY_MESSAGE =
 /** Maps user-facing model IDs to enclave-internal model IDs */
 const PRIVATE_MODEL_MAP: Record<string, string> = {
   "private/kimi-k3": "kimi-k3",
+  "private/kimi-k3-1-pro": "kimi-k3-1-pro",
   "private/gpt-oss-120b": "gpt-oss-120b",
   "private/llama3-3-70b": "llama3-3-70b",
   "private/glm-5-3": "glm-5-3",
@@ -191,6 +192,12 @@ const MODEL_LIST_RESPONSE = {
   data: [
     {
       id: "private/kimi-k3",
+      object: "model",
+      created: 0,
+      owned_by: "ppq-private",
+    },
+    {
+      id: "private/kimi-k3-1-pro",
       object: "model",
       created: 0,
       owned_by: "ppq-private",

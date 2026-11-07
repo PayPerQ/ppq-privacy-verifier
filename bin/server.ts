@@ -91,7 +91,7 @@ console.log(`  export ANTHROPIC_AUTH_TOKEN="$PPQ_API_KEY"`);
 console.log(`  export ANTHROPIC_MODEL="private/glm-5-3"`);
 console.log(`  export ANTHROPIC_SMALL_FAST_MODEL="private/deepseek-v4-1-flash"`);
 console.log(`  claude`);
-console.log("  # glm-5-3 / deepseek-v4-1-flash / gpt-oss-120b / llama3-3-70b / kimi-k3 support tool calls");
+console.log("  # glm-5-3 / deepseek-v4-1-flash / gpt-oss-120b / llama3-3-70b / kimi-k3 / kimi-k3-1-pro support tool calls");
 console.log("");
 
 // Graceful shutdown
