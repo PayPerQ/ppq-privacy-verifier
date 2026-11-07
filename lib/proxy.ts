@@ -704,14 +704,19 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
 
   /**
    * Route an incoming model to a backend. `private/*` models ALWAYS go to
-   * Tinfoil (unchanged, checked first). Any other model routes to the enclave
-   * ONLY when that backend is configured; otherwise it's unknown → null (the
-   * same 400 as before). A missing/empty model still defaults to Tinfoil kimi
-   * via resolveModel, exactly as today.
+   * Tinfoil (unchanged, checked first). A `private/*` id that resolveModel
+   * does not know (retired, misspelled) is refused here, never handed to the
+   * Nitro path: that path seals the body to PPQ's enclave key, not Tinfoil's,
+   * and a prompt that asked for the Tinfoil-only contract must not be opened
+   * anywhere else, even by an attested enclave that would only refuse it.
+   * Any other model routes to the enclave ONLY when that backend is
+   * configured; otherwise it's unknown → null (the same 400 as before). A
+   * missing/empty model still defaults to Tinfoil kimi via resolveModel.
    */
   function routeModel(rawModel: unknown): Route | null {
     const priv = resolveModel(rawModel);
     if (priv) return { backend: "tinfoil", ...priv };
+    if (typeof rawModel === "string" && /^private\//i.test(rawModel)) return null;
     if (enclaveFetch && typeof rawModel === "string" && rawModel) {
       return { backend: "enclave", modelId: rawModel };
     }
