@@ -9,7 +9,7 @@
  *   1. Copy this plugin directory to your OpenClaw plugins folder
  *   2. Run `npm install` in the plugin directory
  *   3. Add your PPQ API key in OpenClaw settings
- *   4. Set model to any private model (e.g. private/kimi-k3)
+ *   4. Set model to any private model (e.g. private/kimi-k3-1-pro)
  */
 
 import { startProxy, type ProxyHandle, type ProxyConfig } from "./lib/proxy.js";
@@ -101,7 +101,6 @@ export default function register(api: any) {
                     chat: `http://127.0.0.1:${proxy.port}/v1/chat/completions`,
                   },
                   availableModels: [
-                    "private/kimi-k3",
                     "private/kimi-k3-1-pro",
                     "private/gpt-oss-120b",
                     "private/llama3-3-70b",
@@ -145,16 +144,6 @@ export default function register(api: any) {
       // Rate card: https://api.tinfoil.sh/api/config/models (last synced
       // 2026-08-12, when Tinfoil corrected Kimi K3 from $2/$6 to $4/$20).
       models: [
-        {
-          id: "private/kimi-k3",
-          name: "Kimi K3 (Private)",
-          reasoning: true,
-          input: ["text", "image"],
-          // $4.00 / $20.00 × 1.055
-          cost: { input: 4.22, output: 21.1, cacheRead: 0, cacheWrite: 0 },
-          contextWindow: 256000,
-          maxTokens: 8192,
-        },
         {
           id: "private/kimi-k3-1-pro",
           name: "Kimi K3.1 Pro (Private)",
@@ -235,7 +224,7 @@ export default function register(api: any) {
           if (typeof key === "symbol") throw new Error("Setup cancelled");
           return {
             profiles: [{ profileId: "default", credential: { apiKey: key } }],
-            defaultModel: "private/kimi-k3",
+            defaultModel: "private/kimi-k3-1-pro",
           };
         },
       },
