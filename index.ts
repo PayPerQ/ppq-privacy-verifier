@@ -102,6 +102,7 @@ export default function register(api: any) {
                   },
                   availableModels: [
                     "private/kimi-k3",
+                    "private/kimi-k3-1-pro",
                     "private/gpt-oss-120b",
                     "private/llama3-3-70b",
                     "private/glm-5-3",
@@ -152,6 +153,16 @@ export default function register(api: any) {
           // $4.00 / $20.00 × 1.055
           cost: { input: 4.22, output: 21.1, cacheRead: 0, cacheWrite: 0 },
           contextWindow: 256000,
+          maxTokens: 8192,
+        },
+        {
+          id: "private/kimi-k3-1-pro",
+          name: "Kimi K3.1 Pro (Private)",
+          reasoning: true,
+          input: ["text", "image"],
+          // $4.00 / $20.00 × 1.055; cached input $0.40 × 1.055 (hp #723).
+          cost: { input: 4.22, output: 21.1, cacheRead: 0.42, cacheWrite: 0 },
+          contextWindow: 262144,
           maxTokens: 8192,
         },
         {

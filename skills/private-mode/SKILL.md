@@ -54,6 +54,7 @@ Here is the complete config to merge (replace `USER_API_KEY` with the actual key
         "api": "openai-completions",
         "models": [
           { "id": "private/kimi-k3", "name": "private/kimi-k3" },
+          { "id": "private/kimi-k3-1-pro", "name": "private/kimi-k3-1-pro" },
           { "id": "private/gpt-oss-120b", "name": "private/gpt-oss-120b" },
           { "id": "private/llama3-3-70b", "name": "private/llama3-3-70b" },
           { "id": "private/glm-5-3", "name": "private/glm-5-3" },
@@ -92,6 +93,7 @@ systemctl --user restart openclaw-gateway.service
 Tell the user PPQ Private Mode is configured. Available encrypted models:
 
 - `private/kimi-k3` -- Moonshot flagship multimodal MoE, reasoning, strong coding, 256K context
+- `private/kimi-k3-1-pro` -- Moonshot's K3 successor for long-horizon coding and agentic work, reasoning always on, 262K context
 - `private/gpt-oss-120b` -- Cost-efficient general use
 - `private/llama3-3-70b` -- Open-source tasks
 - `private/glm-5-3` -- Agentic engineering with long-horizon tool use, 1M context
