@@ -158,7 +158,6 @@ const NO_KEY_MESSAGE =
 
 /** Maps user-facing model IDs to enclave-internal model IDs */
 const PRIVATE_MODEL_MAP: Record<string, string> = {
-  "private/kimi-k3": "kimi-k3",
   "private/kimi-k3-1-pro": "kimi-k3-1-pro",
   "private/gpt-oss-120b": "gpt-oss-120b",
   "private/llama3-3-70b": "llama3-3-70b",
@@ -190,12 +189,6 @@ export function stripEmptyTools(body: Record<string, unknown>): void {
 const MODEL_LIST_RESPONSE = {
   object: "list",
   data: [
-    {
-      id: "private/kimi-k3",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
     {
       id: "private/kimi-k3-1-pro",
       object: "model",
@@ -238,9 +231,9 @@ const MODEL_LIST_RESPONSE = {
 // ─── Request helpers (shared by both dialects) ───────────────────────────────
 
 interface ResolvedModel {
-  /** User-facing id, e.g. "private/kimi-k3" — sent upstream as X-Private-Model. */
+  /** User-facing id, e.g. "private/kimi-k3-1-pro" — sent upstream as X-Private-Model. */
   modelId: string;
-  /** Enclave-internal id, e.g. "kimi-k3" — placed in the request body. */
+  /** Enclave-internal id, e.g. "kimi-k3-1-pro" — placed in the request body. */
   enclaveModelId: string;
 }
 
@@ -249,7 +242,7 @@ interface ResolvedModel {
  * "private/" prefix. Returns null when the model is not a known private model.
  */
 function resolveModel(rawModel: unknown): ResolvedModel | null {
-  let modelId = typeof rawModel === "string" && rawModel ? rawModel : "private/kimi-k3";
+  let modelId = typeof rawModel === "string" && rawModel ? rawModel : "private/kimi-k3-1-pro";
   if (!PRIVATE_MODEL_MAP[modelId]) {
     const prefixed = `private/${modelId}`;
     if (PRIVATE_MODEL_MAP[prefixed]) {
@@ -711,14 +704,19 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
 
   /**
    * Route an incoming model to a backend. `private/*` models ALWAYS go to
-   * Tinfoil (unchanged, checked first). Any other model routes to the enclave
-   * ONLY when that backend is configured; otherwise it's unknown → null (the
-   * same 400 as before). A missing/empty model still defaults to Tinfoil kimi
-   * via resolveModel, exactly as today.
+   * Tinfoil (unchanged, checked first). A `private/*` id that resolveModel
+   * does not know (retired, misspelled) is refused here, never handed to the
+   * Nitro path: that path seals the body to PPQ's enclave key, not Tinfoil's,
+   * and a prompt that asked for the Tinfoil-only contract must not be opened
+   * anywhere else, even by an attested enclave that would only refuse it.
+   * Any other model routes to the enclave ONLY when that backend is
+   * configured; otherwise it's unknown → null (the same 400 as before). A
+   * missing/empty model still defaults to Tinfoil kimi via resolveModel.
    */
   function routeModel(rawModel: unknown): Route | null {
     const priv = resolveModel(rawModel);
     if (priv) return { backend: "tinfoil", ...priv };
+    if (typeof rawModel === "string" && /^private\//i.test(rawModel)) return null;
     if (enclaveFetch && typeof rawModel === "string" && rawModel) {
       return { backend: "enclave", modelId: rawModel };
     }

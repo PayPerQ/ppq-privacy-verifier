@@ -83,7 +83,7 @@ console.log("");
 console.log("Send a test request (OpenAI format):");
 console.log(`  curl http://127.0.0.1:${proxy.port}/v1/chat/completions \\`);
 console.log(`    -H "Content-Type: application/json" \\`);
-console.log(`    -d '{"model":"private/kimi-k3","messages":[{"role":"user","content":"Hello"}]}'`);
+console.log(`    -d '{"model":"private/kimi-k3-1-pro","messages":[{"role":"user","content":"Hello"}]}'`);
 console.log("");
 console.log("Use with Claude Code (Anthropic format, POST /v1/messages):");
 console.log(`  export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy.port}"`);
@@ -91,7 +91,7 @@ console.log(`  export ANTHROPIC_AUTH_TOKEN="$PPQ_API_KEY"`);
 console.log(`  export ANTHROPIC_MODEL="private/glm-5-3"`);
 console.log(`  export ANTHROPIC_SMALL_FAST_MODEL="private/deepseek-v4-1-flash"`);
 console.log(`  claude`);
-console.log("  # glm-5-3 / deepseek-v4-1-flash / gpt-oss-120b / llama3-3-70b / kimi-k3 / kimi-k3-1-pro support tool calls");
+console.log("  # glm-5-3 / deepseek-v4-1-flash / gpt-oss-120b / llama3-3-70b / kimi-k3-1-pro support tool calls");
 console.log("");
 
 // Graceful shutdown
