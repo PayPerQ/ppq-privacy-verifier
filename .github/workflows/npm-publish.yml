@@ -1,0 +1,56 @@
+name: Publish to npm
+
+# A release tag (vX.Y.Z) publishes that version of ppq-private-mode to npm,
+# with provenance. Docker is built by docker-publish.yml from the same tag.
+# NPM_TOKEN is a granular token (read+write on ppq-private-mode, 2FA bypass);
+# it expires, so an E401 here means the secret needs a fresh token.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Tag must match package.json
+        if: github.ref_type == 'tag'
+        run: |
+          ver=$(node -p "require('./package.json').version")
+          test "v$ver" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME does not match package.json $ver"; exit 1; }
+
+      - run: npm ci
+
+      - name: Already on npm?
+        id: check
+        run: |
+          name=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if npm view "$name@$ver" version >/dev/null 2>&1; then
+            echo "$name@$ver is already published; dry run only"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run
+        if: steps.check.outputs.published == 'true'
+        run: npm publish --dry-run
