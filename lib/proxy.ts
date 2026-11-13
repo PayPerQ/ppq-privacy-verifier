@@ -88,6 +88,8 @@ export interface ProxyHandle {
   port: number;
   server: http.Server;
   verification: VerificationDocument | null;
+  /** Live private model ids (resolved from the API at startup, refreshed on a miss). */
+  privateModels: () => string[];
   close: () => Promise<void>;
 }
 
@@ -156,18 +158,80 @@ const NO_KEY_MESSAGE =
   "No PPQ.AI API key configured. Save one on the proxy's status page, set the " +
   "PPQ_API_KEY environment variable, or pass a key as an Authorization: Bearer header.";
 
-/** Maps user-facing model IDs to enclave-internal model IDs */
-const PRIVATE_MODEL_MAP: Record<string, string> = {
-  "private/kimi-k3-1-pro": "kimi-k3-1-pro",
-  "private/gpt-oss-120b": "gpt-oss-120b",
-  "private/llama3-3-70b": "llama3-3-70b",
-  "private/glm-5-3": "glm-5-3",
-  "private/gemma4-31b": "gemma4-31b",
-  "private/deepseek-v4-1-flash": "deepseek-v4-1-flash",
-};
+/**
+ * The private model catalog is RESOLVED AT STARTUP from PPQ's public model
+ * list (GET /v1/models, no key sent), for the same reason the PCR0 above is:
+ * a compiled-in list goes stale whenever a model is added or retired, and a
+ * republish was the only fix. The baked-in list is a FALLBACK for the offline
+ * case, not the source of truth. A `private/*` id is sent upstream as
+ * X-Private-Model and, without the prefix, as the body's model; nothing else
+ * in the proxy is per-model.
+ */
+const PRIVATE_PREFIX = "private/";
+const PRIVATE_MODEL_ID_RE = /^private\/[\w.-]+$/;
+const DEFAULT_PRIVATE_MODEL = "private/kimi-k3-1-pro";
+const FALLBACK_PRIVATE_MODELS = [
+  "private/kimi-k3-1-pro",
+  "private/gpt-oss-120b",
+  "private/llama3-3-70b",
+  "private/glm-5-3",
+  "private/gemma4-31b",
+  "private/deepseek-v4-1-flash",
+];
+/** A long-running proxy re-reads the catalog on an unknown private/* id, at most this often. */
+const CATALOG_REFRESH_MIN_MS = 60_000;
 
-/** All available private model IDs (user-facing) */
-const PRIVATE_MODELS = Object.keys(PRIVATE_MODEL_MAP);
+async function fetchPrivateCatalog(
+  apiBase: string,
+  logger?: { debug?: (m: string) => void }
+): Promise<string[] | null> {
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 5_000);
+    const res = await fetch(`${apiBase}/v1/models`, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: unknown };
+    if (!Array.isArray(body?.data)) return null;
+    // Shape-checked: only chat ids of the exact private/* form, so a malformed
+    // or unexpected list can never widen what gets sealed to Tinfoil.
+    const ids = new Set<string>();
+    for (const m of body.data as any[]) {
+      const id = m && typeof m.id === "string" ? m.id : "";
+      if (PRIVATE_MODEL_ID_RE.test(id) && (m.type === undefined || m.type === "chat")) ids.add(id);
+    }
+    return ids.size ? [...ids] : null;
+  } catch (err: any) {
+    logger?.debug?.(`private model catalog lookup failed (${err?.message}); using fallback`);
+    return null;
+  }
+}
+
+class PrivateCatalog {
+  ids: string[];
+  source: "api" | "fallback";
+  private lastRefresh = 0;
+  constructor(ids: string[] | null, private readonly apiBase: string, private readonly logger: Logger) {
+    this.ids = ids ?? FALLBACK_PRIVATE_MODELS;
+    this.source = ids ? "api" : "fallback";
+    this.lastRefresh = Date.now();
+  }
+  has(id: string): boolean {
+    return this.ids.includes(id);
+  }
+  /** Re-read the catalog, rate-limited; returns true when the list changed. */
+  async refresh(): Promise<boolean> {
+    if (Date.now() - this.lastRefresh < CATALOG_REFRESH_MIN_MS) return false;
+    this.lastRefresh = Date.now();
+    const ids = await fetchPrivateCatalog(this.apiBase, this.logger);
+    if (!ids) return false;
+    const changed = ids.join(",") !== this.ids.join(",");
+    this.ids = ids;
+    this.source = "api";
+    if (changed) this.logger.info(`Private models updated: ${ids.join(", ")}`);
+    return changed;
+  }
+}
 
 /**
  * Tinfoil's router rejects `tools: []` ("tools must not be an empty array")
@@ -186,47 +250,12 @@ export function stripEmptyTools(body: Record<string, unknown>): void {
 }
 
 /** OpenAI-format model list response */
-const MODEL_LIST_RESPONSE = {
-  object: "list",
-  data: [
-    {
-      id: "private/kimi-k3-1-pro",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-    {
-      id: "private/gpt-oss-120b",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-    {
-      id: "private/llama3-3-70b",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-    {
-      id: "private/glm-5-3",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-    {
-      id: "private/gemma4-31b",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-    {
-      id: "private/deepseek-v4-1-flash",
-      object: "model",
-      created: 0,
-      owned_by: "ppq-private",
-    },
-  ],
-};
+function modelListResponse(ids: string[]) {
+  return {
+    object: "list",
+    data: ids.map((id) => ({ id, object: "model", created: 0, owned_by: "ppq-private" })),
+  };
+}
 
 // ─── Request helpers (shared by both dialects) ───────────────────────────────
 
@@ -241,17 +270,22 @@ interface ResolvedModel {
  * Resolve an incoming model name to a valid private model, tolerating a missing
  * "private/" prefix. Returns null when the model is not a known private model.
  */
-function resolveModel(rawModel: unknown): ResolvedModel | null {
-  let modelId = typeof rawModel === "string" && rawModel ? rawModel : "private/kimi-k3-1-pro";
-  if (!PRIVATE_MODEL_MAP[modelId]) {
-    const prefixed = `private/${modelId}`;
-    if (PRIVATE_MODEL_MAP[prefixed]) {
+function resolveModel(rawModel: unknown, catalog: PrivateCatalog): ResolvedModel | null {
+  let modelId =
+    typeof rawModel === "string" && rawModel
+      ? rawModel
+      : catalog.has(DEFAULT_PRIVATE_MODEL)
+        ? DEFAULT_PRIVATE_MODEL
+        : catalog.ids[0];
+  if (!catalog.has(modelId)) {
+    const prefixed = `${PRIVATE_PREFIX}${modelId}`;
+    if (catalog.has(prefixed)) {
       modelId = prefixed;
     } else {
       return null;
     }
   }
-  return { modelId, enclaveModelId: PRIVATE_MODEL_MAP[modelId] };
+  return { modelId, enclaveModelId: modelId.slice(PRIVATE_PREFIX.length) };
 }
 
 /**
@@ -599,6 +633,13 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
 
   const encryptedFetch = client.fetch;
 
+  const catalog = new PrivateCatalog(await fetchPrivateCatalog(apiBase, logger), apiBase, logger);
+  logger.info(
+    catalog.source === "api"
+      ? `Private models (from ${apiBase}): ${catalog.ids.join(", ")}`
+      : `Private models (built-in list; ${apiBase}/v1/models unreachable): ${catalog.ids.join(", ")}`
+  );
+
   // ── Nitro-enclave backend (BETA — on by default) ─────────────────────────────
   // Non-private models route through the attested PPQ enclave (defaults to the
   // published prod enclave + pinned PCR0; override via PPQ_ENCLAVE_URL/_PCR0).
@@ -711,12 +752,17 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
    * anywhere else, even by an attested enclave that would only refuse it.
    * Any other model routes to the enclave ONLY when that backend is
    * configured; otherwise it's unknown → null (the same 400 as before). A
-   * missing/empty model still defaults to Tinfoil kimi via resolveModel.
+   * missing/empty model still defaults to Tinfoil kimi via resolveModel. An
+   * unknown private/* id first triggers a (rate-limited) catalog re-read, so a
+   * proxy that has been up for weeks still sees a model Tinfoil added since.
    */
-  function routeModel(rawModel: unknown): Route | null {
-    const priv = resolveModel(rawModel);
+  async function routeModel(rawModel: unknown): Promise<Route | null> {
+    let priv = resolveModel(rawModel, catalog);
+    if (!priv && typeof rawModel === "string" && /^private\//i.test(rawModel)) {
+      if (await catalog.refresh()) priv = resolveModel(rawModel, catalog);
+      if (!priv) return null;
+    }
     if (priv) return { backend: "tinfoil", ...priv };
-    if (typeof rawModel === "string" && /^private\//i.test(rawModel)) return null;
     if (enclaveFetch && typeof rawModel === "string" && rawModel) {
       return { backend: "enclave", modelId: rawModel };
     }
@@ -784,7 +830,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
           codeFingerprint: verification?.codeFingerprint,
           keyConfigured: !!keyStore.get(),
           setupEnabled: keyStore.persistent,
-          models: PRIVATE_MODELS,
+          models: catalog.ids,
         })
       );
       return;
@@ -798,6 +844,8 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
           status: "ok",
           attestation: !!verification,
           apiKeyConfigured: !!keyStore.get(),
+          privateModels: catalog.ids,
+          privateModelsSource: catalog.source,
         })
       );
       return;
@@ -838,7 +886,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
     // GET /v1/models
     if (url.pathname === "/v1/models" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(MODEL_LIST_RESPONSE));
+      res.end(JSON.stringify(modelListResponse(catalog.ids)));
       return;
     }
 
@@ -848,13 +896,13 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
         const body = await readBody(req);
         const parsed = JSON.parse(body);
 
-        const routed = routeModel(parsed.model);
+        const routed = await routeModel(parsed.model);
         if (!routed) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
               error: {
-                message: `Unknown model: ${parsed.model}. Available: ${PRIVATE_MODELS.join(", ")}`,
+                message: `Unknown model: ${parsed.model}. Available: ${catalog.ids.join(", ")}`,
                 type: "invalid_request_error",
               },
             })
@@ -926,7 +974,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
         const body = await readBody(req);
         const anthropicReq = JSON.parse(body) as AnthropicRequest;
 
-        const routed = routeModel(anthropicReq.model);
+        const routed = await routeModel(anthropicReq.model);
         if (!routed) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(
@@ -934,7 +982,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
               type: "error",
               error: {
                 type: "invalid_request_error",
-                message: `Unknown model: ${anthropicReq.model}. Available: ${PRIVATE_MODELS.join(", ")}`,
+                message: `Unknown model: ${anthropicReq.model}. Available: ${catalog.ids.join(", ")}`,
               },
             })
           );
@@ -1037,6 +1085,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
     port,
     server,
     verification,
+    privateModels: () => catalog.ids,
     close: () =>
       new Promise<void>((resolve) => {
         server.close(() => resolve());
