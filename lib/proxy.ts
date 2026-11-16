@@ -178,13 +178,30 @@ const FALLBACK_PRIVATE_MODELS = [
   "private/gemma4-31b",
   "private/deepseek-v4-1-flash",
 ];
+/**
+ * Retired ids PPQ still serves as a same-family successor. The API advertises
+ * them as `aliases` on the successor's /v1/models entry; this copy is only the
+ * offline fallback, like FALLBACK_PRIVATE_MODELS. A retired id is rewritten
+ * to its successor BEFORE sealing, so an agent configured with an old id keeps
+ * working without a proxy update.
+ */
+const FALLBACK_PRIVATE_MODEL_ALIASES: Record<string, string> = {
+  "private/kimi-k3": "private/kimi-k3-1-pro",
+  "private/glm-5-2": "private/glm-5-3",
+};
 /** A long-running proxy re-reads the catalog on an unknown private/* id, at most this often. */
 const CATALOG_REFRESH_MIN_MS = 60_000;
+
+interface CatalogSnapshot {
+  ids: string[];
+  /** Retired id → live id it is served as. */
+  aliases: Record<string, string>;
+}
 
 async function fetchPrivateCatalog(
   apiBase: string,
   logger?: { debug?: (m: string) => void }
-): Promise<string[] | null> {
+): Promise<CatalogSnapshot | null> {
   try {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 5_000);
@@ -196,11 +213,23 @@ async function fetchPrivateCatalog(
     // Shape-checked: only chat ids of the exact private/* form, so a malformed
     // or unexpected list can never widen what gets sealed to Tinfoil.
     const ids = new Set<string>();
+    const aliasPairs: [string, string][] = [];
     for (const m of body.data as any[]) {
       const id = m && typeof m.id === "string" ? m.id : "";
-      if (PRIVATE_MODEL_ID_RE.test(id) && (m.type === undefined || m.type === "chat")) ids.add(id);
+      if (PRIVATE_MODEL_ID_RE.test(id) && (m.type === undefined || m.type === "chat")) {
+        ids.add(id);
+        if (Array.isArray(m.aliases)) {
+          for (const a of m.aliases) {
+            if (typeof a === "string" && PRIVATE_MODEL_ID_RE.test(a)) aliasPairs.push([a, id]);
+          }
+        }
+      }
     }
-    return ids.size ? [...ids] : null;
+    if (!ids.size) return null;
+    // A live id is never shadowed by an alias.
+    const aliases: Record<string, string> = {};
+    for (const [a, id] of aliasPairs) if (!ids.has(a)) aliases[a] = id;
+    return { ids: [...ids], aliases };
   } catch (err: any) {
     logger?.debug?.(`private model catalog lookup failed (${err?.message}); using fallback`);
     return null;
@@ -209,26 +238,36 @@ async function fetchPrivateCatalog(
 
 class PrivateCatalog {
   ids: string[];
+  aliases: Record<string, string>;
   source: "api" | "fallback";
   private lastRefresh = 0;
-  constructor(ids: string[] | null, private readonly apiBase: string, private readonly logger: Logger) {
-    this.ids = ids ?? FALLBACK_PRIVATE_MODELS;
-    this.source = ids ? "api" : "fallback";
+  constructor(snap: CatalogSnapshot | null, private readonly apiBase: string, private readonly logger: Logger) {
+    this.ids = snap?.ids ?? FALLBACK_PRIVATE_MODELS;
+    this.aliases = snap?.aliases ?? FALLBACK_PRIVATE_MODEL_ALIASES;
+    this.source = snap ? "api" : "fallback";
     this.lastRefresh = Date.now();
   }
   has(id: string): boolean {
     return this.ids.includes(id);
   }
+  /** The live id a retired id is served as, or undefined. */
+  successorOf(id: string): string | undefined {
+    const live = Object.prototype.hasOwnProperty.call(this.aliases, id) ? this.aliases[id] : undefined;
+    return live && this.has(live) ? live : undefined;
+  }
   /** Re-read the catalog, rate-limited; returns true when the list changed. */
   async refresh(): Promise<boolean> {
     if (Date.now() - this.lastRefresh < CATALOG_REFRESH_MIN_MS) return false;
     this.lastRefresh = Date.now();
-    const ids = await fetchPrivateCatalog(this.apiBase, this.logger);
-    if (!ids) return false;
-    const changed = ids.join(",") !== this.ids.join(",");
-    this.ids = ids;
+    const snap = await fetchPrivateCatalog(this.apiBase, this.logger);
+    if (!snap) return false;
+    const changed =
+      snap.ids.join(",") !== this.ids.join(",") ||
+      JSON.stringify(snap.aliases) !== JSON.stringify(this.aliases);
+    this.ids = snap.ids;
+    this.aliases = snap.aliases;
     this.source = "api";
-    if (changed) this.logger.info(`Private models updated: ${ids.join(", ")}`);
+    if (changed) this.logger.info(`Private models updated: ${snap.ids.join(", ")}`);
     return changed;
   }
 }
@@ -279,11 +318,11 @@ function resolveModel(rawModel: unknown, catalog: PrivateCatalog): ResolvedModel
         : catalog.ids[0];
   if (!catalog.has(modelId)) {
     const prefixed = `${PRIVATE_PREFIX}${modelId}`;
-    if (catalog.has(prefixed)) {
-      modelId = prefixed;
-    } else {
-      return null;
-    }
+    // A retired id resolves to its successor only when spelled with the
+    // prefix: a bare `kimi-k3` names the public model, not the TEE one.
+    const live = catalog.has(prefixed) ? prefixed : catalog.successorOf(modelId);
+    if (!live) return null;
+    modelId = live;
   }
   return { modelId, enclaveModelId: modelId.slice(PRIVATE_PREFIX.length) };
 }
@@ -845,6 +884,7 @@ export async function startProxy(config: ProxyConfig, logger: Logger): Promise<P
           attestation: !!verification,
           apiKeyConfigured: !!keyStore.get(),
           privateModels: catalog.ids,
+          privateModelAliases: catalog.aliases,
           privateModelsSource: catalog.source,
         })
       );
