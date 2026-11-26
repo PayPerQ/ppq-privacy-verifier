@@ -58,7 +58,8 @@ Here is the complete config to merge (replace `USER_API_KEY` with the actual key
           { "id": "private/llama3-3-70b", "name": "private/llama3-3-70b" },
           { "id": "private/glm-5-3", "name": "private/glm-5-3" },
           { "id": "private/gemma4-31b", "name": "private/gemma4-31b" },
-          { "id": "private/deepseek-v4-1-flash", "name": "private/deepseek-v4-1-flash" }
+          { "id": "private/deepseek-v4-1-flash", "name": "private/deepseek-v4-1-flash" },
+          { "id": "private/inkling-2-small", "name": "private/inkling-2-small" }
         ]
       }
     }
@@ -76,7 +77,7 @@ Here is the complete config to merge (replace `USER_API_KEY` with the actual key
 ```
 
 After merging, verify that `~/.openclaw/openclaw.json` contains BOTH:
-1. A `ppq-private` entry under `models.providers` with the 6 private models listed
+1. A `ppq-private` entry under `models.providers` with the 7 private models listed
 2. A `ppq-private-mode` entry under `plugins.entries` with the user's API key
 
 If either is missing, the private models will not work.
@@ -97,6 +98,7 @@ Tell the user PPQ Private Mode is configured. Available encrypted models:
 - `private/glm-5-3` -- Agentic engineering with long-horizon tool use, 1M context
 - `private/gemma4-31b` -- Vision plus text with thinking mode, 262K context
 - `private/deepseek-v4-1-flash` -- Multimodal refresh with vision input, 1M context
+- `private/inkling-2-small` -- Thinking Machines Lab multimodal model with adjustable reasoning, 524K context
 
 Switch with: `openclaw models set private/kimi-k3-1-pro`
 
