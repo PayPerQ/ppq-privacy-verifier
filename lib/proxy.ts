@@ -177,6 +177,7 @@ const FALLBACK_PRIVATE_MODELS = [
   "private/glm-5-3",
   "private/gemma4-31b",
   "private/deepseek-v4-1-flash",
+  "private/inkling-2-small",
 ];
 /**
  * Retired ids PPQ still serves as a same-family successor. The API advertises

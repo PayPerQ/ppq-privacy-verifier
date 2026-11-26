@@ -195,9 +195,19 @@ export default function register(api: any) {
           name: "DeepSeek V4.1 Flash (Private)",
           reasoning: true,
           input: ["text", "image"],
-          // $0.65 / $1.45 × 1.055; cached input $0.13 × 1.055 (hp #723).
-          cost: { input: 0.69, output: 1.53, cacheRead: 0.14, cacheWrite: 0 },
+          // $0.60 / $1.45 × 1.055; cached input $0.01 × 1.055 (hp #723).
+          cost: { input: 0.63, output: 1.53, cacheRead: 0.01, cacheWrite: 0 },
           contextWindow: 1048576,
+          maxTokens: 8192,
+        },
+        {
+          id: "private/inkling-2-small",
+          name: "Inkling 2 Small (Private)",
+          reasoning: true,
+          input: ["text", "image"],
+          // $0.30 / $1.00 × 1.055; cached input $0.03 × 1.055.
+          cost: { input: 0.32, output: 1.06, cacheRead: 0.03, cacheWrite: 0 },
+          contextWindow: 524288,
           maxTokens: 8192,
         },
       ],
